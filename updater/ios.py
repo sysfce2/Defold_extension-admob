@@ -25,6 +25,7 @@ IOS_PLATFORM = "13.0"
 # Map the "name" attribute from the checkbox to the ext.properties key.
 NETWORK_MAP = {
     "AppLovin": "applovin",
+    "BidMachine": "bidmachine",
     "Chartboost": "chartboost",
     "Fyber": "dt_exchange",
     "IMobile": "imobile",
@@ -44,6 +45,7 @@ NETWORK_MAP = {
 
 LABEL_MAP = {
     "applovin": "AppLovin iOS",
+    "bidmachine": "BidMachine iOS",
     "chartboost": "Chartboost iOS",
     "dt_exchange": "DT Exchange iOS",
     "imobile": "i-mobile iOS",

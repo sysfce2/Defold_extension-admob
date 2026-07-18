@@ -27,6 +27,7 @@ LIFECYCLE_FALLBACK = "2.8.3"
 # Map the "name" attribute used in the HTML checkboxes to the ext.properties key.
 NETWORK_MAP = {
     "appLovin": "applovin",
+    "bidmachine": "bidmachine",
     "chartboost": "chartboost",
     "fyber": "dt_exchange",
     "imobile": "imobile",
@@ -51,6 +52,7 @@ EXTRA_REPOS = {
 
 LABEL_MAP = {
     "applovin": "AppLovin Android",
+    "bidmachine": "BidMachine Android",
     "chartboost": "Chartboost Android",
     "dt_exchange": "DT Exchange Android",
     "imobile": "i-mobile Android",
@@ -67,6 +69,11 @@ LABEL_MAP = {
     "pubmatic": "PubMatic Android",
     "unity": "Unity Ads Android",
 }
+
+# Keep adapters in the generated Gradle template while withholding their
+# settings when they are deliberately disabled for extension users.
+DISABLED_PROPERTY_KEYS = {"chartboost"}
+
 
 def collapse_blank_lines(lines: List[str]) -> List[str]:
     collapsed: List[str] = []
@@ -270,7 +277,7 @@ def rewrite_ext_properties(data: Dict[str, Dict[str, object]]) -> None:
         insert_index = len(preserved)
 
     new_block: List[str] = []
-    for key in sorted(data.keys()):
+    for key in sorted(key for key in data.keys() if key not in DISABLED_PROPERTY_KEYS):
         prop = f"{key}_android"
         label = LABEL_MAP.get(key, f"{key.replace('_', ' ').title()} Android")
         new_block.append(f"{prop}.type = bool")

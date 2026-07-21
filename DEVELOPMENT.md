@@ -1,12 +1,18 @@
 # Notes on setup of this extension
 
-The extension uses [iOS](https://developers.google.com/admob/ios/quick-start) and [Android](https://developers.google.com/admob/android/quick-start) SDKs.
+The extension uses the [iOS Mobile Ads SDK](https://developers.google.com/admob/ios/quick-start) and the [GMA Next-Gen SDK for Android](https://developers.google.com/admob/android/next-gen/quick-start).
 
 ## Android SDK update
 
-Open `extension-admob/manifests/android/build.gradle` and change version in `compile 'com.google.android.gms:play-services-ads:X.X.X'` to the latest.
+Run the Android updater from the repository root:
 
-Check [Release Notes](https://developers.google.com/admob/android/rel-notes) to make sure there are no breaking changes and all new APIs implemented.
+```sh
+python3 updater/android.py
+```
+
+The updater reads the latest GMA Next-Gen SDK release and mediation adapter definitions, then regenerates `extension-admob/manifests/android/build.gradle`. Do not edit that generated file by hand.
+
+Check the [GMA Next-Gen SDK release notes](https://developers.google.com/admob/android/next-gen/rel-notes) for breaking changes that require extension API updates.
 
 ## iOS SDK update
 

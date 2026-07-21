@@ -165,7 +165,7 @@ function init(self)
             self.rewardedvideo_ad_unit = "ca-app-pub-3940256099942544/1712485313" -- test unit for rewarded
             self.rewarded_interstitial_video_ad_unit = "ca-app-pub-3940256099942544/6978759866" -- test unit for rewarded interstitial
         else --Android
-            -- From https://developers.google.com/admob/android/test-ads
+            -- From https://developers.google.com/admob/android/next-gen/test-ads
             self.appopen_ad_unit = sys.get_config_string("admob.app_open_android", "ca-app-pub-3940256099942544/9257395921")
             self.banner_ad_unit = "ca-app-pub-3940256099942544/6300978111" -- test unit for banners
             self.interstitial_ad_unit = "ca-app-pub-3940256099942544/1033173712" -- test unit for interstitial
@@ -175,7 +175,7 @@ function init(self)
     else
         -- Always test ONLY with test ads units when you test integration!
         --  !!! Replace this keys with your own keys : 
-        -- https://developers.google.com/admob/android/quick-start#set_up_your_app_in_your_admob_account
+        -- https://developers.google.com/admob/android/next-gen/quick-start#set_up_your_app_in_your_admob_account
         if sys.get_sys_info().system_name == 'iPhone OS' then
             self.appopen_ad_unit = sys.get_config_string("admob.app_open_ios", "ca-app-pub-3940256099942544/5575463023")
             self.banner_ad_unit = "ca-app-pub-3940256099942544/2934735716" -- !!! replace it with iOS banner unit
@@ -207,7 +207,7 @@ function init(self)
         admob.set_callback(admob_callback)
         -- !!! Read documentation about privacy settings and use the following method if you need to apply it
         -- https://developers.google.com/admob/ios/ccpa
-        -- https://developers.google.com/admob/android/ccpa
+        -- https://developers.google.com/admob/android/next-gen/privacy/us-states
         admob.set_privacy_settings(true)
     end
     update_ui(self)
@@ -266,7 +266,7 @@ function on_input(self, action_id, action)
             elseif self.ad_type == admob.MSG_BANNER then
                 print("admob.load_banner()")
                 -- 2nd parameter size, adaptive banner by default:
-                -- https://developers.google.com/admob/android/banner/adaptive?hl=en
+                -- https://developers.google.com/admob/android/next-gen/banner/anchored-adaptive
                 admob.load_banner(self.banner_ad_unit)
             elseif self.ad_type == admob.MSG_REWARDED_INTERSTITIAL then
                 print("admob.load_rewarded_interstitial()")

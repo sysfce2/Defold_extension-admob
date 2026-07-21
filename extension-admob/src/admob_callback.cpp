@@ -9,6 +9,19 @@ namespace dmAdmob {
 static dmScript::LuaCallbackInfo* m_luaCallback = 0x0;
 static dmArray<CallbackData> m_callbacksQueue;
 static dmMutex::HMutex m_mutex;
+static bool m_acceptCallbacks = false;
+
+static void FreeCallbackData(dmArray<CallbackData>& callbacks)
+{
+    for (uint32_t i = 0; i != callbacks.Size(); ++i)
+    {
+        if (callbacks[i].json)
+        {
+            free(callbacks[i].json);
+            callbacks[i].json = 0;
+        }
+    }
+}
 
 static void DestroyCallback()
 {
@@ -48,12 +61,25 @@ static void InvokeCallback(MessageId type, const char*json)
 
 void InitializeCallback()
 {
-    m_mutex = dmMutex::New();
+    if (!m_mutex)
+    {
+        // Keep the mutex alive until process teardown: mobile SDK callbacks may
+        // arrive after the extension's finalization callback.
+        m_mutex = dmMutex::New();
+    }
+    DM_MUTEX_SCOPED_LOCK(m_mutex);
+    m_acceptCallbacks = true;
 }
 
 void FinalizeCallback()
 {
-    dmMutex::Delete(m_mutex);
+    dmArray<CallbackData> pending;
+    {
+        DM_MUTEX_SCOPED_LOCK(m_mutex);
+        m_acceptCallbacks = false;
+        pending.Swap(m_callbacksQueue);
+    }
+    FreeCallbackData(pending);
     DestroyCallback();
 }
 
@@ -77,6 +103,14 @@ void AddToQueueCallback(MessageId type, const char*json)
     data.json = json ? strdup(json) : NULL;
 
     DM_MUTEX_SCOPED_LOCK(m_mutex);
+    if (!m_acceptCallbacks)
+    {
+        if (data.json)
+        {
+            free(data.json);
+        }
+        return;
+    }
     if(m_callbacksQueue.Full())
     {
         m_callbacksQueue.OffsetCapacity(2);
@@ -86,14 +120,13 @@ void AddToQueueCallback(MessageId type, const char*json)
 
 void UpdateCallback()
 {
-    if (m_callbacksQueue.Empty())
-    {
-        return;
-    }
-
     dmArray<CallbackData> tmp;
     {
         DM_MUTEX_SCOPED_LOCK(m_mutex);
+        if (m_callbacksQueue.Empty())
+        {
+            return;
+        }
         tmp.Swap(m_callbacksQueue);
     }
     
@@ -101,12 +134,8 @@ void UpdateCallback()
     {
         CallbackData* data = &tmp[i];
         InvokeCallback(data->msg, data->json);
-        if(data->json)
-        {
-            free(data->json);
-            data->json = 0;
-        }
     }
+    FreeCallbackData(tmp);
 }
 
 } //namespace

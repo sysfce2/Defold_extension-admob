@@ -68,7 +68,7 @@ static void CallVoidMethodChar(jobject instance, jmethodID method, const char* c
     dmAndroid::ThreadAttacher threadAttacher;
     JNIEnv* env = threadAttacher.GetEnv();
 
-    jstring jstr = env->NewStringUTF(cstr);
+    jstring jstr = env->NewStringUTF(cstr ? cstr : "");
     env->CallVoidMethod(instance, method, jstr);
     env->DeleteLocalRef(jstr);
 }
@@ -78,7 +78,7 @@ static void CallVoidMethodCharInt(jobject instance, jmethodID method, const char
     dmAndroid::ThreadAttacher threadAttacher;
     JNIEnv* env = threadAttacher.GetEnv();
 
-    jstring jstr = env->NewStringUTF(cstr);
+    jstring jstr = env->NewStringUTF(cstr ? cstr : "");
     env->CallVoidMethod(instance, method, jstr, cint);
     env->DeleteLocalRef(jstr);
 }
@@ -88,7 +88,7 @@ static void CallVoidMethodCharBoolean(jobject instance, jmethodID method, const 
     dmAndroid::ThreadAttacher threadAttacher;
     JNIEnv* env = threadAttacher.GetEnv();
 
-    jstring jstr = env->NewStringUTF(cstr);
+    jstring jstr = env->NewStringUTF(cstr ? cstr : "");
     env->CallVoidMethod(instance, method, jstr, cbool);
     env->DeleteLocalRef(jstr);
 }
@@ -98,9 +98,9 @@ static void CallVoidMethodCharCharChar(jobject instance, jmethodID method, const
     dmAndroid::ThreadAttacher threadAttacher;
     JNIEnv* env = threadAttacher.GetEnv();
 
-    jstring jstr = env->NewStringUTF(cstr);
-    jstring jstr2 = env->NewStringUTF(cstr2);
-    jstring jstr3 = env->NewStringUTF(cstr3);
+    jstring jstr = env->NewStringUTF(cstr ? cstr : "");
+    jstring jstr2 = env->NewStringUTF(cstr2 ? cstr2 : "");
+    jstring jstr3 = env->NewStringUTF(cstr3 ? cstr3 : "");
     env->CallVoidMethod(instance, method, jstr, jstr2, jstr3);
     env->DeleteLocalRef(jstr);
     env->DeleteLocalRef(jstr2);
@@ -126,7 +126,7 @@ static void CallVoidMethodBool(jobject instance, jmethodID method, bool cbool)
 static void InitJNIMethods(JNIEnv* env, jclass cls)
 {
     g_admob.m_Initialize = env->GetMethodID(cls, "initialize", "()V");
-    g_admob.m_LoadAppOpen = env->GetMethodID(cls, "loadAppOpen", "(Ljava/lang/String;)V");
+    g_admob.m_LoadAppOpen = env->GetMethodID(cls, "loadAppOpen", "(Ljava/lang/String;Z)V");
     g_admob.m_ShowAppOpen = env->GetMethodID(cls, "showAppOpen", "()V");
     g_admob.m_LoadInterstitial = env->GetMethodID(cls, "loadInterstitial", "(Ljava/lang/String;)V");
     g_admob.m_ShowInterstitial = env->GetMethodID(cls, "showInterstitial", "()V");
@@ -164,11 +164,14 @@ void Initialize_Ext(dmExtension::Params* params, const char* defoldUserAgent)
     enableTestAds = dmConfigFile::GetInt(params->m_ConfigFile, "admob.test_ads_in_debug", 0) != 0;
 #endif
 
-    const char* appOpenAdUnitId = dmConfigFile::GetString(params->m_ConfigFile, "admob.app_open_android", 0);
+    const char* appId = dmConfigFile::GetString(params->m_ConfigFile, "admob.app_id_android", "");
+    const char* appOpenAdUnitId = dmConfigFile::GetString(params->m_ConfigFile, "admob.app_open_android", "");
+    jstring jappId = env->NewStringUTF(appId ? appId : "");
     jstring jappOpenAdUnitId = env->NewStringUTF(appOpenAdUnitId);
     jstring jdefoldUserAgent = env->NewStringUTF(defoldUserAgent);
-    jmethodID jni_constructor = env->GetMethodID(cls, "<init>", "(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;Z)V");
-    g_admob.m_AdmobJNI = env->NewGlobalRef(env->NewObject(cls, jni_constructor, threadAttacher.GetActivity()->clazz, jappOpenAdUnitId, jdefoldUserAgent, (jboolean)enableTestAds));
+    jmethodID jni_constructor = env->GetMethodID(cls, "<init>", "(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V");
+    g_admob.m_AdmobJNI = env->NewGlobalRef(env->NewObject(cls, jni_constructor, threadAttacher.GetActivity()->clazz, jappId, jappOpenAdUnitId, jdefoldUserAgent, (jboolean)enableTestAds));
+    env->DeleteLocalRef(jappId);
     env->DeleteLocalRef(jappOpenAdUnitId);
     env->DeleteLocalRef(jdefoldUserAgent);
 }

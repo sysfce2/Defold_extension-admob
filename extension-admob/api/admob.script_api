@@ -14,7 +14,7 @@
           before initializing the Mobile Ads SDK.
 
           Original docs
-          [Android](https://developers.google.com/admob/android/quick-start#initialize_the_mobile_ads_sdk),
+          [Android](https://developers.google.com/admob/android/next-gen/quick-start#initialize_the_google_mobile_ads_sdk),
           [iOS](https://developers.google.com/admob/ios/quick-start#initialize_the_mobile_ads_sdk)"
 
 #*****************************************************************************************************
@@ -168,7 +168,7 @@
     type: function
     desc: Sets user privacy preferences (must be called before `admob.initialize()`).
           Original docs
-          [Android](https://developers.google.com/admob/android/ccpa),
+          [Android](https://developers.google.com/admob/android/next-gen/privacy/us-states),
           [iOS](https://developers.google.com/admob/ios/ccpa)
 
     parameters:
@@ -191,7 +191,7 @@
           realtime analysis of test ad requests directly within a mobile app.
           Ad Inspector only launces on [test devices](https://support.google.com/admob/answer/9691433).
           Original docs
-          [Android](https://developers.google.com/admob/android/ad-inspector),
+          [Android](https://developers.google.com/admob/android/next-gen/ad-inspector),
           [iOS](https://developers.google.com/admob/ios/ad-inspector)
 
 #*****************************************************************************************************
@@ -200,7 +200,7 @@
     type: function
     desc: Starts loading an AppOpen Ad, can only be called after `admob.MSG_INITIALIZATION` event
           Original docs
-          [Android](https://developers.google.com/admob/android/app-open),
+          [Android](https://developers.google.com/admob/android/next-gen/app-open),
           [iOS](https://developers.google.com/admob/ios/app-open)
 
     parameters:
@@ -209,7 +209,7 @@
       desc: Ad unit ID, for test ads use on Android `"ca-app-pub-3940256099942544/9257395921"`, or
             on iOS `"ca-app-pub-3940256099942544/5575463023"`
             Original docs
-            [Android](https://developers.google.com/admob/android/app-open),
+            [Android](https://developers.google.com/admob/android/next-gen/app-open),
             [iOS](https://developers.google.com/admob/ios/app-open)
 
 #*****************************************************************************************************
@@ -218,7 +218,7 @@
     type: function
     desc: Shows loaded AppOpen Ad, can only be called after `admob.EVENT_LOADED`
           Original docs
-          [Android](https://developers.google.com/admob/android/app-open),
+          [Android](https://developers.google.com/admob/android/next-gen/app-open),
           [iOS](https://developers.google.com/admob/ios/app-open)
 
     examples:
@@ -235,7 +235,7 @@
     type: function
     desc: Checks if AppOpen Ad is loaded and ready to show
           Original docs
-          [Android](https://developers.google.com/admob/android/app-open),
+          [Android](https://developers.google.com/admob/android/next-gen/app-open),
           [iOS](https://developers.google.com/admob/ios/app-open)
 
     returns:
@@ -248,7 +248,7 @@
     type: function
     desc: Starts loading an Interstitial Ad, can only be called after `admob.MSG_INITIALIZATION` event
           Original docs
-          [Android](https://developers.google.com/admob/android/interstitial-fullscreen),
+          [Android](https://developers.google.com/admob/android/next-gen/interstitial),
           [iOS](https://developers.google.com/admob/ios/interstitial)
 
     parameters:
@@ -257,7 +257,7 @@
       desc: Ad unit ID, for test ads use on Android `"ca-app-pub-3940256099942544/1033173712"`, or
             on iOS `"ca-app-pub-3940256099942544/4411468910"`
             Original docs
-            [Android](https://developers.google.com/admob/android/interstitial-fullscreen),
+            [Android](https://developers.google.com/admob/android/next-gen/interstitial),
             [iOS](https://developers.google.com/admob/ios/interstitial)
 
 #*****************************************************************************************************
@@ -266,7 +266,7 @@
     type: function
     desc: Shows loaded Interstitial Ad, can only be called after `admob.EVENT_LOADED`
           Original docs
-          [Android](https://developers.google.com/admob/android/interstitial-fullscreen),
+          [Android](https://developers.google.com/admob/android/next-gen/interstitial),
           [iOS](https://developers.google.com/admob/ios/interstitial)
 
     examples:
@@ -283,7 +283,7 @@
     type: function
     desc: Checks if Interstitial Ad is loaded and ready to show
           Original docs
-          [Android](https://developers.google.com/admob/android/interstitial-fullscreen),
+          [Android](https://developers.google.com/admob/android/next-gen/interstitial),
           [iOS](https://developers.google.com/admob/ios/interstitial)
 
     returns:
@@ -296,7 +296,7 @@
     type: function
     desc: Starts loading a Rewarded Ad, can only be called after `admob.MSG_INITIALIZATION` event
           Original docs
-          [Android](https://developers.google.com/admob/android/rewarded-fullscreen),
+          [Android](https://developers.google.com/admob/android/next-gen/rewarded),
           [iOS](https://developers.google.com/admob/ios/rewarded-ads)
 
     parameters:
@@ -305,13 +305,13 @@
       desc: Ad unit ID, for test ads use on Android `"ca-app-pub-3940256099942544/1712485313"`, or
             on iOS `"ca-app-pub-3940256099942544/4411468910"`
             Original docs
-            [Android](https://developers.google.com/admob/android/rewarded-fullscreen),
+            [Android](https://developers.google.com/admob/android/next-gen/rewarded),
             [iOS](https://developers.google.com/admob/ios/rewarded-ads)
     - name: options
       type: table
       optional: true
       desc: ServerSideVerificationOptions
-            [Android](https://developers.google.com/admob/android/rewarded#validate-ssv),
+            [Android](https://developers.google.com/admob/android/next-gen/ssv),
             [iOS](https://developers.google.com/admob/ios/rewarded#validate-ssv)
       fields:
           - name: user_id
@@ -330,7 +330,7 @@
     type: function
     desc: Shows loaded Rewarded Ad, can only be called after `admob.EVENT_LOADED`
           Original docs
-          [Android](https://developers.google.com/admob/android/rewarded-fullscreen),
+          [Android](https://developers.google.com/admob/android/next-gen/rewarded),
           [iOS](https://developers.google.com/admob/ios/rewarded-ads)
 
     examples:
@@ -347,7 +347,7 @@
     type: function
     desc: Checks if Rewarded Ad is loaded and ready to show
           Original docs
-          [Android](https://developers.google.com/admob/android/rewarded-fullscreen),
+          [Android](https://developers.google.com/admob/android/next-gen/rewarded),
           [iOS](https://developers.google.com/admob/ios/rewarded-ads)
 
     returns:
@@ -360,7 +360,7 @@
     type: function
     desc: Starts loading a Rewarded Interstitial Ad, can only be called after `admob.MSG_INITIALIZATION` event
           Original docs
-          [Android](https://developers.google.com/admob/android/rewarded-interstitial#load_an_ad),
+          [Android](https://developers.google.com/admob/android/next-gen/rewarded-interstitial#load_an_ad),
           [iOS](https://developers.google.com/admob/ios/rewarded-interstitial#load_an_ad)
 
     parameters:
@@ -369,7 +369,7 @@
       desc: Ad unit ID, for test ads use on Android `"ca-app-pub-3940256099942544/5354046379"`, or
             on iOS `"ca-app-pub-3940256099942544/6978759866"`
             Original docs
-            [Android](https://developers.google.com/admob/android/rewarded-interstitial#load_an_ad),
+            [Android](https://developers.google.com/admob/android/next-gen/rewarded-interstitial#load_an_ad),
             [iOS](https://developers.google.com/admob/ios/rewarded-interstitial#load_an_ad)
 
 #*****************************************************************************************************
@@ -378,7 +378,7 @@
     type: function
     desc: Shows loaded Rewarded Interstitial Ad, can only be called after `admob.EVENT_LOADED`
           Original docs
-          [Android](https://developers.google.com/admob/android/rewarded-interstitial#show_the_ad),
+          [Android](https://developers.google.com/admob/android/next-gen/rewarded-interstitial#show_the_ad),
           [iOS](https://developers.google.com/admob/ios/rewarded-interstitial#display_the_ad_and_handle_the_reward_event)
 
     examples:
@@ -395,7 +395,7 @@
     type: function
     desc: Checks if Rewarded Interstitial Ad is loaded and ready to show
           Original docs
-          [Android](https://developers.google.com/admob/android/rewarded-interstitial),
+          [Android](https://developers.google.com/admob/android/next-gen/rewarded-interstitial),
           [iOS](https://developers.google.com/admob/ios/rewarded-interstitial)
 
     returns:
@@ -408,7 +408,7 @@
     type: function
     desc: Starts loading a Banner Ad, can only be called after `admob.MSG_INITIALIZATION` event
           Original docs
-          [Android](https://developers.google.com/admob/android/banner),
+          [Android](https://developers.google.com/admob/android/next-gen/banner),
           [iOS](https://developers.google.com/admob/ios/banner)
 
     parameters:
@@ -417,7 +417,7 @@
       desc: Ad unit ID, for test ads use on Android `"ca-app-pub-3940256099942544/6300978111"`, or
             on iOS `"ca-app-pub-3940256099942544/2934735716"`
             Original docs
-            [Android](https://developers.google.com/admob/android/banner),
+            [Android](https://developers.google.com/admob/android/next-gen/banner),
             [iOS](https://developers.google.com/admob/ios/banner)
 
     - name: size
@@ -431,10 +431,9 @@
             `admob.SIZE_LARGE_BANNER`,
             `admob.SIZE_LEADEARBOARD`,
             `admob.SIZE_MEDIUM_RECTANGLE`,
-            `admob.SIZE_SMART_BANNER`,
             `admob.SIZE_LARGE_ADAPTIVE_BANNER`
             Original docs
-            [Android](https://developers.google.com/admob/android/banner#banner_sizes),
+            [Android](https://developers.google.com/admob/android/next-gen/banner#banner_sizes),
             [iOS](https://developers.google.com/admob/ios/banner#banner_sizes)"
 
 #*****************************************************************************************************
@@ -443,7 +442,7 @@
     type: function
     desc: Shows loaded Banner Ad, can only be called after `admob.EVENT_LOADED`
           Original docs
-          [Android](https://developers.google.com/admob/android/banner),
+          [Android](https://developers.google.com/admob/android/next-gen/banner),
           [iOS](https://developers.google.com/admob/ios/banner)
 
     parameters:
@@ -474,7 +473,7 @@
     type: function
     desc: Sets a maximum ad content rating. AdMob ads returned for your app will have a content rating at or below that level. 
           Original docs
-          [Android](https://developers.google.com/admob/android/targeting#ad_content_filtering),
+          [Android](https://developers.google.com/admob/android/next-gen/targeting#ad_content_filtering),
           [iOS](https://developers.google.com/admob/ios/targeting#ad_content_filtering)
 
     parameters:
@@ -498,7 +497,7 @@
     type: function
     desc: Temporarily hides Banner Ad, banner can be shown again using `admob.show_banner()`
           Original docs
-          [Android](https://developers.google.com/admob/android/banner),
+          [Android](https://developers.google.com/admob/android/next-gen/banner),
           [iOS](https://developers.google.com/admob/ios/banner)
 
 #*****************************************************************************************************
@@ -507,7 +506,7 @@
     type: function
     desc: Checks if Banner Ad is loaded and ready to show
           Original docs
-          [Android](https://developers.google.com/admob/android/banner),
+          [Android](https://developers.google.com/admob/android/next-gen/banner),
           [iOS](https://developers.google.com/admob/ios/banner)
 
     returns:
@@ -520,7 +519,7 @@
     type: function
     desc: Hides and unloads Banner Ad (needs to call `admob.load_banner()` later to show Banner Ad)
           Original docs
-          [Android](https://developers.google.com/admob/android/banner),
+          [Android](https://developers.google.com/admob/android/next-gen/banner),
           [iOS](https://developers.google.com/admob/ios/banner)
 
 #*****************************************************************************************************
@@ -624,11 +623,6 @@
 
   - name: SIZE_MEDIUM_RECTANGLE
     type: number
-
-  - name: SIZE_SMART_BANNER
-    type: number
-
-#*****************************************************************************************************
 
   - name: POS_NONE
     type: number

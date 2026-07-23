@@ -12,6 +12,9 @@
           Warning: If you need to obtain consent from users in the European Economic Area (EEA), set
           any request-specific flags, or otherwise take action before loading ads, ensure you do so
           before initializing the Mobile Ads SDK.
+          On Android, initialization starts automatically when `admob.app_open_android` is configured.
+          Leave that setting empty and use `admob.load_appopen()` after initialization if consent or
+          other configuration must be applied first.
 
           Original docs
           [Android](https://developers.google.com/admob/android/next-gen/quick-start#initialize_the_google_mobile_ads_sdk),
@@ -198,7 +201,9 @@
 
   - name: load_appopen
     type: function
-    desc: Starts loading an AppOpen Ad, can only be called after `admob.MSG_INITIALIZATION` event
+    desc: Starts loading an App Open Ad, can only be called after `admob.MSG_INITIALIZATION` event.
+          This is the manual alternative to configuring `admob.app_open_android` or
+          `admob.app_open_ios`, which automatically loads and shows App Open ads.
           Original docs
           [Android](https://developers.google.com/admob/android/next-gen/app-open),
           [iOS](https://developers.google.com/admob/ios/app-open)
@@ -216,7 +221,7 @@
 
   - name: show_appopen
     type: function
-    desc: Shows loaded AppOpen Ad, can only be called after `admob.EVENT_LOADED`
+    desc: Shows loaded App Open Ad, can only be called after `admob.EVENT_LOADED`
           Original docs
           [Android](https://developers.google.com/admob/android/next-gen/app-open),
           [iOS](https://developers.google.com/admob/ios/app-open)
@@ -233,7 +238,7 @@
 
   - name: is_appopen_loaded
     type: function
-    desc: Checks if AppOpen Ad is loaded and ready to show
+    desc: Checks if an App Open Ad is loaded and ready to show
           Original docs
           [Android](https://developers.google.com/admob/android/next-gen/app-open),
           [iOS](https://developers.google.com/admob/ios/app-open)

@@ -22,7 +22,7 @@ Before you begin you need to either [sign in](https://admob.google.com/home/) to
 
 ### Android requirements
 
-Android builds use the [GMA Next-Gen SDK](https://developers.google.com/admob/android/next-gen/quick-start), which requires Android minimum SDK version 24 and compile SDK version 35 or later. [The GMA Next-Gen SDK does not support Android TV](https://developers.google.com/admob/android/next-gen/sdk).
+Android builds use the [GMA Next-Gen SDK](https://developers.google.com/admob/android/next-gen/quick-start), which requires Android minimum SDK version 24 and compile SDK version 34 or later. [The GMA Next-Gen SDK does not support Android TV](https://developers.google.com/admob/android/next-gen/sdk).
 
 The removed Android `SMART_BANNER` format is no longer exposed by the extension. Use `admob.SIZE_ADAPTIVE_BANNER` instead.
 
@@ -66,6 +66,7 @@ Apple documentation: https://developer.apple.com/documentation/apptrackingtransp
 
 For now mediation is supported on Android only. To enable it:
 
+- Use AdMob as the mediation platform. Other mediation platforms are not compatible with the GMA Next-Gen SDK.
 - Enable the adapters you need in the `[admob]` section of `game.project` (for example `unity_android = 1`).
 - Follow [each network’s official GMA Next-Gen mediation guide](https://developers.google.com/admob/android/next-gen/mediation/choose-networks) end-to-end. There is no partial “adapter added but not initialized” state.
 - You must use your own ad unit IDs. Google’s demo IDs only show Google ads and won’t exercise mediation.
@@ -131,6 +132,8 @@ end
 
 ### Initialization
 Next step is to initialize the Mobile Ads SDK. Note that if you need to obtain consent from users in the European Economic Area (EEA), set any request-specific flags, or otherwise take action before loading ads, ensure you do so before initializing the Mobile Ads SDK.
+
+On Android, initialization starts automatically when `admob.app_open_android` is configured. Leave that setting empty and use the manual App Open flow after initialization if consent or other configuration must be applied first.
 
 ```lua
 admob.initialize()
@@ -244,7 +247,7 @@ local function admob_callback(self, message_id, message)
 
 ### App Open Ads
 
-After `admob.initialize()` completes, App Open Ads will automatically be loaded and shown if an ad unit id is provided in the `game.project` configuration (see above). If you wish to manually load and show App Open Ads you can leave the `game.project` configuration blank and instead use the following functions:
+App Open Ads will automatically be loaded and shown if an ad unit id is provided in the `game.project` configuration (see above). If you wish to manually load and show App Open Ads you can leave the `game.project` configuration blank and instead use the following functions:
 
 ```lua
 admob.load_appopen(ad_unit)

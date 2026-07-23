@@ -137,6 +137,7 @@ public class AdmobJNI implements LifecycleObserver {
         activity.runOnUiThread(new Runnable() {
           @Override
           public void run() {
+            initialize();
             ProcessLifecycleOwner.get().getLifecycle().addObserver(AdmobJNI.this);
             loadAppOpen(appOpenAdUnitId, true);
           }

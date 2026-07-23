@@ -12,8 +12,8 @@ import android.widget.LinearLayout;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup.MarginLayoutParams;
-import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 
 import androidx.lifecycle.LifecycleObserver;
@@ -21,42 +21,41 @@ import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.lifecycle.OnLifecycleEvent;
 import androidx.lifecycle.Lifecycle.Event;
 
-import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.appopen.AppOpenAd;
-import com.google.android.gms.ads.appopen.AppOpenAd.AppOpenAdLoadCallback;
-import com.google.android.gms.ads.FullScreenContentCallback;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdError;
-import com.google.android.gms.ads.FullScreenContentCallback;
-import com.google.android.gms.ads.LoadAdError;
-import com.google.android.gms.ads.MobileAds;
-import com.google.android.gms.ads.AdInspectorError;
-import com.google.android.gms.ads.OnAdInspectorClosedListener;
-import com.google.android.gms.ads.RequestConfiguration;
-import com.google.android.gms.ads.initialization.AdapterStatus;
-import com.google.android.gms.ads.initialization.InitializationStatus;
-import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
+import com.google.android.libraries.ads.mobile.sdk.MobileAds;
+import com.google.android.libraries.ads.mobile.sdk.appopen.AppOpenAd;
+import com.google.android.libraries.ads.mobile.sdk.appopen.AppOpenAdEventCallback;
+import com.google.android.libraries.ads.mobile.sdk.banner.AdSize;
+import com.google.android.libraries.ads.mobile.sdk.banner.AdView;
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerAd;
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdEventCallback;
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRefreshCallback;
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRequest;
+import com.google.android.libraries.ads.mobile.sdk.common.AdInspectorError;
+import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback;
+import com.google.android.libraries.ads.mobile.sdk.common.AdRequest;
+import com.google.android.libraries.ads.mobile.sdk.common.FullScreenContentError;
+import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError;
+import com.google.android.libraries.ads.mobile.sdk.common.OnAdInspectorClosedListener;
+import com.google.android.libraries.ads.mobile.sdk.common.RequestConfiguration;
+import com.google.android.libraries.ads.mobile.sdk.initialization.AdapterStatus;
+import com.google.android.libraries.ads.mobile.sdk.initialization.InitializationConfig;
+import com.google.android.libraries.ads.mobile.sdk.initialization.InitializationStatus;
+import com.google.android.libraries.ads.mobile.sdk.initialization.OnAdapterInitializationCompleteListener;
+import com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAd;
+import com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAdEventCallback;
+import com.google.android.libraries.ads.mobile.sdk.rewarded.OnUserEarnedRewardListener;
+import com.google.android.libraries.ads.mobile.sdk.rewarded.RewardItem;
+import com.google.android.libraries.ads.mobile.sdk.rewarded.RewardedAd;
+import com.google.android.libraries.ads.mobile.sdk.rewarded.RewardedAdEventCallback;
+import com.google.android.libraries.ads.mobile.sdk.rewarded.ServerSideVerificationOptions;
+import com.google.android.libraries.ads.mobile.sdk.rewardedinterstitial.RewardedInterstitialAd;
+import com.google.android.libraries.ads.mobile.sdk.rewardedinterstitial.RewardedInterstitialAdEventCallback;
 
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.google.android.gms.ads.interstitial.InterstitialAd;
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
-
-import com.google.android.gms.ads.OnUserEarnedRewardListener;
-import com.google.android.gms.ads.rewarded.RewardItem;
-import com.google.android.gms.ads.rewarded.RewardedAd;
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
-import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
-
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
@@ -98,7 +97,6 @@ public class AdmobJNI implements LifecycleObserver {
   private static final int SIZE_LARGE_BANNER =        4;
   private static final int SIZE_LEADEARBOARD =        5;
   private static final int SIZE_MEDIUM_RECTANGLE =    6;
-  private static final int SIZE_SMART_BANNER =        9;
   private static final int SIZE_LARGE_ADAPTIVE_BANNER = 10;
 
   private static final int POS_NONE =                 0;
@@ -118,12 +116,18 @@ public class AdmobJNI implements LifecycleObserver {
   // END CONSTANTS
 
   private String defoldUserAgent = "defold-x.y.z";
+  private final Activity activity;
+  private final String appId;
+  private final List<String> testDeviceIds = new ArrayList<String>();
+  private RequestConfiguration.MaxAdContentRating maxAdContentRating =
+      RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_UNSPECIFIED;
+  private boolean initializationStarted = false;
+  private boolean initializationComplete = false;
+  private final List<Runnable> pendingInitializationTasks = new ArrayList<Runnable>();
 
-  private Activity activity;
-
-
-  public AdmobJNI(Activity activity, String appOpenAdUnitId, String defoldUserAgent, boolean testAdsInDebug) {
+  public AdmobJNI(Activity activity, String appId, String appOpenAdUnitId, String defoldUserAgent, boolean testAdsInDebug) {
       this.activity = activity;
+      this.appId = appId;
       this.mAppOpenAdUnitId = appOpenAdUnitId;
       this.defoldUserAgent = defoldUserAgent;
 
@@ -145,17 +149,10 @@ public class AdmobJNI implements LifecycleObserver {
     if (!testAdsInDebug) {
       return;
     }
-    List<String> testDeviceIds = new ArrayList<String>();
-    testDeviceIds.add(AdRequest.DEVICE_ID_EMULATOR);
     String deviceId = getHashedDeviceId();
     if (deviceId != null && deviceId.length() > 0) {
       testDeviceIds.add(deviceId);
     }
-    RequestConfiguration requestConfiguration = MobileAds.getRequestConfiguration()
-        .toBuilder()
-        .setTestDeviceIds(testDeviceIds)
-        .build();
-    MobileAds.setRequestConfiguration(requestConfiguration);
     Log.d(TAG, "Test ads enabled for this device: " + (deviceId != null ? deviceId : "unknown"));
   }
 
@@ -179,19 +176,73 @@ public class AdmobJNI implements LifecycleObserver {
     }
   }
 
+  private synchronized RequestConfiguration buildRequestConfiguration() {
+    RequestConfiguration.Builder builder = new RequestConfiguration.Builder();
+    if (!testDeviceIds.isEmpty()) {
+      builder.setTestDeviceIds(new ArrayList<String>(testDeviceIds));
+    }
+    if (maxAdContentRating != RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_UNSPECIFIED) {
+      builder.setMaxAdContentRating(maxAdContentRating);
+    }
+    return builder.build();
+  }
+
   public void initialize() {
-      new Thread(new Runnable() {
-        @Override
-        public void run() {
-          MobileAds.initialize(activity, new OnInitializationCompleteListener() {
-            @Override
-            public void onInitializationComplete(InitializationStatus initializationStatus) {
-              logAdapterStatus(initializationStatus);
-              sendSimpleMessage(MSG_INITIALIZATION, EVENT_COMPLETE);
+    synchronized (this) {
+      if (initializationComplete) {
+        sendSimpleMessage(MSG_INITIALIZATION, EVENT_COMPLETE);
+        return;
+      }
+      if (initializationStarted) {
+        return;
+      }
+      initializationStarted = true;
+    }
+
+    final InitializationConfig initializationConfig =
+        new InitializationConfig.Builder(appId)
+            .setRequestConfiguration(buildRequestConfiguration())
+            .build();
+
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        MobileAds.initialize(activity, initializationConfig, new OnAdapterInitializationCompleteListener() {
+          @Override
+          public void onAdapterInitializationComplete(InitializationStatus initializationStatus) {
+            logAdapterStatus(initializationStatus);
+
+            List<Runnable> tasks;
+            synchronized (AdmobJNI.this) {
+              initializationComplete = true;
+              tasks = new ArrayList<Runnable>(pendingInitializationTasks);
+              pendingInitializationTasks.clear();
             }
-          });
-        }
-      }).start();
+
+            // Pick up configuration changes made while mediation adapters were initializing.
+            MobileAds.setRequestConfiguration(buildRequestConfiguration());
+            sendSimpleMessage(MSG_INITIALIZATION, EVENT_COMPLETE);
+            for (final Runnable task : tasks) {
+              activity.runOnUiThread(task);
+            }
+          }
+        });
+      }
+    }).start();
+  }
+
+  private void runWhenInitialized(Runnable task) {
+    boolean runNow;
+    synchronized (this) {
+      runNow = initializationComplete;
+      if (!runNow) {
+        pendingInitializationTasks.add(task);
+      }
+    }
+
+    if (runNow) {
+      activity.runOnUiThread(task);
+    }
   }
 
   private void logAdapterStatus(InitializationStatus initializationStatus) {
@@ -207,35 +258,37 @@ public class AdmobJNI implements LifecycleObserver {
     }
   }
 
+  @SuppressWarnings("deprecation")
   public void setPrivacySettings(boolean enable_rdp) {
-    SharedPreferences sharedPref = activity.getPreferences(Context.MODE_PRIVATE);
-    SharedPreferences.Editor editor = sharedPref.edit();
-    editor.putInt("gad_rdp", enable_rdp ? 1 : 0);
-    editor.commit();
+    SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
+    sharedPref.edit().putInt("gad_rdp", enable_rdp ? 1 : 0).apply();
   }
 
   public void setMaxAdContentRating(final int max_ad_rating) {
-    String rating = null;
+    RequestConfiguration.MaxAdContentRating rating = null;
     switch (max_ad_rating) {
       case MAX_AD_CONTENT_RATING_G:
-        rating = RequestConfiguration.MAX_AD_CONTENT_RATING_G;
+        rating = RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_G;
         break;
       case MAX_AD_CONTENT_RATING_PG:
-        rating = RequestConfiguration.MAX_AD_CONTENT_RATING_PG;
+        rating = RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_PG;
         break;
       case MAX_AD_CONTENT_RATING_T:
-        rating = RequestConfiguration.MAX_AD_CONTENT_RATING_T;
+        rating = RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_T;
         break;
       case MAX_AD_CONTENT_RATING_MA:
-        rating = RequestConfiguration.MAX_AD_CONTENT_RATING_MA;
+        rating = RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_MA;
         break;
       }
     if (rating != null) {
-      RequestConfiguration requestConfiguration = MobileAds.getRequestConfiguration()
-        .toBuilder()
-        .setMaxAdContentRating(rating)
-        .build();
-      MobileAds.setRequestConfiguration(requestConfiguration);
+      boolean applyImmediately;
+      synchronized (this) {
+        maxAdContentRating = rating;
+        applyImmediately = initializationComplete;
+      }
+      if (applyImmediately) {
+        MobileAds.setRequestConfiguration(buildRequestConfiguration());
+      }
       Log.d(TAG, "setMaxAdContentRating " + rating);
     }
   }
@@ -245,14 +298,19 @@ public class AdmobJNI implements LifecycleObserver {
   }
 
   public void showAdInspector() {
-    activity.runOnUiThread(new Runnable() {
+    runWhenInitialized(new Runnable() {
       @Override
       public void run() {
-        MobileAds.openAdInspector(activity, new OnAdInspectorClosedListener() {
+        MobileAds.openAdInspector(new OnAdInspectorClosedListener() {
+          @Override
           public void onAdInspectorClosed(AdInspectorError error) {
             // Error will be non-null if ad inspector closed due to an error.
             if (error != null) {
-              Log.d(TAG, error.toString());
+              Log.d(
+                  TAG,
+                  String.format(
+                      "Ad Inspector closed with error %s (%d): %s",
+                      error.getCode(), error.getCode().getValue(), error.getMessage()));
             }
           }
         });
@@ -327,15 +385,35 @@ public class AdmobJNI implements LifecycleObserver {
     admobAddToQueue(msg, message);
   }
 
-  private AdRequest createAdRequest() {
-    return new AdRequest.Builder().setRequestAgent(defoldUserAgent).build();
+  private void sendLoadError(int msg, int eventId, LoadAdError error) {
+    sendSimpleMessage(
+        msg,
+        eventId,
+        "code",
+        error.getCode().getValue(),
+        "error",
+        String.format("Error code: \"%s\". %s", error.getCode(), error.getMessage()));
+  }
+
+  private void sendShowError(int msg, FullScreenContentError error) {
+    sendSimpleMessage(
+        msg,
+        EVENT_FAILED_TO_SHOW,
+        "code",
+        error.getCode().getValue(),
+        "error",
+        String.format("Error code: \"%s\". %s", error.getCode(), error.getMessage()));
+  }
+
+  private AdRequest createAdRequest(String unitId) {
+    return new AdRequest.Builder(unitId).setRequestAgent(defoldUserAgent).build();
   }
 
 //--------------------------------------------------
 // App Open Ads
 
   private String mAppOpenAdUnitId = null;
-  private AppOpenAd mAppOpenAd = null;
+  private volatile AppOpenAd mAppOpenAd = null;
   private boolean mIsLoadingAppOpenAd = false;
   private boolean mIsShowingAppOpenAd = false;
 
@@ -346,7 +424,7 @@ public class AdmobJNI implements LifecycleObserver {
   }
 
   private boolean isAutomaticAppOpenEnabled() {
-    return mAppOpenAdUnitId != null;
+    return mAppOpenAdUnitId != null && mAppOpenAdUnitId.length() > 0;
   }
 
   public boolean isAppOpenLoaded() {
@@ -354,6 +432,15 @@ public class AdmobJNI implements LifecycleObserver {
   }
 
   public void showAppOpen() {
+    runWhenInitialized(new Runnable() {
+      @Override
+      public void run() {
+        showAppOpenInternal();
+      }
+    });
+  }
+
+  private void showAppOpenInternal() {
     // If the app open ad is already showing, do not show the ad again
     if (mIsShowingAppOpenAd) {
       Log.d(TAG, "The app open ad is already showing.");
@@ -363,20 +450,25 @@ public class AdmobJNI implements LifecycleObserver {
     // If the app open ad is not available yet then load it
     if (!isAppOpenLoaded() && isAutomaticAppOpenEnabled()) {
       Log.d(TAG, "The app open ad is not ready yet.");
-      loadAppOpen(mAppOpenAdUnitId, true);
+      loadAppOpenInternal(mAppOpenAdUnitId, true);
+      return;
+    }
+
+    if (!isAppOpenLoaded()) {
+      sendSimpleMessage(MSG_APPOPEN, EVENT_NOT_LOADED, "error", "Can't show App Open AD that wasn't loaded.");
       return;
     }
 
     Log.d(TAG, "Showing app open ad.");
     mIsShowingAppOpenAd = true;
-    activity.runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        mAppOpenAd.setFullScreenContentCallback(
-            new FullScreenContentCallback() {
+    mAppOpenAd.setAdEventCallback(
+        new AppOpenAdEventCallback() {
 
+          @Override
+          public void onAdDismissedFullScreenContent() {
+            activity.runOnUiThread(new Runnable() {
               @Override
-              public void onAdDismissedFullScreenContent() {
+              public void run() {
                 // Called when fullscreen content is dismissed.
                 // Clean up state and load a new ad
                 Log.d(TAG, "Ad dismissed fullscreen content.");
@@ -387,46 +479,74 @@ public class AdmobJNI implements LifecycleObserver {
                   loadAppOpen(mAppOpenAdUnitId, false);
                 }
               }
+            });
+          }
 
+          @Override
+          public void onAdFailedToShowFullScreenContent(final FullScreenContentError error) {
+            activity.runOnUiThread(new Runnable() {
               @Override
-              public void onAdFailedToShowFullScreenContent(AdError adError) {
+              public void run() {
                 // Called when fullscreen content failed to show.
                 // Clean up state and load a new ad
-                Log.d(TAG, adError.getMessage());
-                sendSimpleMessage(MSG_APPOPEN, EVENT_FAILED_TO_SHOW, "code", adError.getCode(),
-                                "error", String.format("Error domain: \"%s\". %s", adError.getDomain(), adError.getMessage()));
+                Log.d(TAG, error.getMessage());
+                sendShowError(MSG_APPOPEN, error);
                 mAppOpenAd = null;
                 mIsShowingAppOpenAd = false;
                 if (isAutomaticAppOpenEnabled()) {
                   loadAppOpen(mAppOpenAdUnitId, false);
                 }
               }
+            });
+          }
 
+          @Override
+          public void onAdShowedFullScreenContent() {
+            activity.runOnUiThread(new Runnable() {
               @Override
-              public void onAdShowedFullScreenContent() {
+              public void run() {
                 // Called when fullscreen content is shown.
                 Log.d(TAG, "Ad showed fullscreen content.");
                 sendSimpleMessage(MSG_APPOPEN, EVENT_OPENING);
               }
+            });
+          }
 
+          @Override
+          public void onAdImpression() {
+            activity.runOnUiThread(new Runnable() {
               @Override
-              public void onAdImpression() {
+              public void run() {
                 sendSimpleMessage(MSG_APPOPEN, EVENT_IMPRESSION_RECORDED);
               }
+            });
+          }
 
+          @Override
+          public void onAdClicked() {
+            activity.runOnUiThread(new Runnable() {
               @Override
-              public void onAdClicked() {
+              public void run() {
                 sendSimpleMessage(MSG_APPOPEN, EVENT_CLICKED);
               }
             });
-        mAppOpenAd.show(activity);
-      }
-    });
+          }
+        });
+    mAppOpenAd.show(activity);
   }
 
   // Load an app open ad with the provided ad unit id, optionally also showing it
   // immediately when it loaded
-  public void loadAppOpen(String adUnitId, boolean showImmediately) {
+  public void loadAppOpen(final String adUnitId, final boolean showImmediately) {
+    runWhenInitialized(new Runnable() {
+      @Override
+      public void run() {
+        loadAppOpenInternal(adUnitId, showImmediately);
+      }
+    });
+  }
+
+  private void loadAppOpenInternal(final String adUnitId, final boolean showImmediately) {
     // Do not load ad if one is already loading.
     if (mIsLoadingAppOpenAd) {
       Log.d(TAG, "Already loading app open ad.");
@@ -445,29 +565,37 @@ public class AdmobJNI implements LifecycleObserver {
 
     Log.d(TAG, "Loading app open ad.");
     mIsLoadingAppOpenAd = true;
-    AdRequest request = new AdRequest.Builder().build();
     AppOpenAd.load(
-      activity, adUnitId, request,
-      new AppOpenAdLoadCallback() {
+      createAdRequest(adUnitId),
+      new AdLoadCallback<AppOpenAd>() {
         @Override
-        public void onAdLoaded(AppOpenAd ad) {
-          // Called when an app open ad has loaded.
-          Log.d(TAG, "Ad was loaded.");
-          sendSimpleMessage(MSG_APPOPEN, EVENT_LOADED);
-          mAppOpenAd = ad;
-          mIsLoadingAppOpenAd = false;
-          if (showImmediately) {
-            showAppOpen();
-          }
+        public void onAdLoaded(final AppOpenAd ad) {
+          activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              // Called when an app open ad has loaded.
+              Log.d(TAG, "Ad was loaded.");
+              sendSimpleMessage(MSG_APPOPEN, EVENT_LOADED);
+              mAppOpenAd = ad;
+              mIsLoadingAppOpenAd = false;
+              if (showImmediately) {
+                showAppOpenInternal();
+              }
+            }
+          });
         }
 
         @Override
-        public void onAdFailedToLoad(LoadAdError loadAdError) {
-          // Called when an app open ad has failed to load.
-          Log.d(TAG, loadAdError.getMessage());
-          sendSimpleMessage(MSG_APPOPEN, EVENT_FAILED_TO_SHOW, "code", loadAdError.getCode(),
-                          "error", String.format("Error domain: \"%s\". %s", loadAdError.getDomain(), loadAdError.getMessage()));
-          mIsLoadingAppOpenAd = false;
+        public void onAdFailedToLoad(final LoadAdError loadAdError) {
+          activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              // Called when an app open ad has failed to load.
+              Log.d(TAG, loadAdError.getMessage());
+              sendLoadError(MSG_APPOPEN, EVENT_FAILED_TO_LOAD, loadAdError);
+              mIsLoadingAppOpenAd = false;
+            }
+          });
         }
       });
   }
@@ -480,72 +608,77 @@ public class AdmobJNI implements LifecycleObserver {
 //--------------------------------------------------
 // Interstitial ADS
 
-  private InterstitialAd mInterstitialAd;
+  private volatile InterstitialAd mInterstitialAd;
 
   public void loadInterstitial(final String unitId) {
-      activity.runOnUiThread(new Runnable() {
+    runWhenInitialized(new Runnable() {
       @Override
       public void run() {
-        AdRequest adRequest = createAdRequest();
-
-        InterstitialAd.load(activity, unitId, adRequest, new InterstitialAdLoadCallback() {
-                @Override
-                public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
-                  // The mInterstitialAd reference will be null until
-                  // an ad is loaded.
-                  // Log.d(TAG, "onAdLoaded");
-                   mInterstitialAd = interstitialAd;
-                   sendSimpleMessage(MSG_INTERSTITIAL, EVENT_LOADED);
-                   mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback(){
+        InterstitialAd.load(createAdRequest(unitId), new AdLoadCallback<InterstitialAd>() {
+          @Override
+          public void onAdLoaded(@NonNull final InterstitialAd interstitialAd) {
+            activity.runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                mInterstitialAd = interstitialAd;
+                sendSimpleMessage(MSG_INTERSTITIAL, EVENT_LOADED);
+                interstitialAd.setAdEventCallback(new InterstitialAdEventCallback() {
+                  @Override
+                  public void onAdDismissedFullScreenContent() {
+                    activity.runOnUiThread(new Runnable() {
                       @Override
-                      public void onAdDismissedFullScreenContent() {
-                        // Called when fullscreen content is dismissed.
-                        // Log.d(TAG, "The ad was closed.");
-                        mInterstitialAd = null;
+                      public void run() {
                         sendSimpleMessage(MSG_INTERSTITIAL, EVENT_CLOSED);
                       }
+                    });
+                  }
 
+                  @Override
+                  public void onAdFailedToShowFullScreenContent(final FullScreenContentError error) {
+                    activity.runOnUiThread(new Runnable() {
                       @Override
-                      public void onAdFailedToShowFullScreenContent(AdError adError) {
-                        // Called when fullscreen content failed to show.
-                        mInterstitialAd = null;
-                        sendSimpleMessage(MSG_INTERSTITIAL, EVENT_FAILED_TO_SHOW, "code", adError.getCode(),
-                          "error", String.format("Error domain: \"%s\". %s", adError.getDomain(), adError.getMessage()));
-                      }
-
-                      @Override
-                      public void onAdShowedFullScreenContent() {
-                        // Called when fullscreen content is shown.
-                        // Make sure to set your reference to null so you don't
-                        // show it a second time.
-                        // Log.d(TAG, "The ad was shown.");
-                        mInterstitialAd = null;
-                        sendSimpleMessage(MSG_INTERSTITIAL, EVENT_OPENING);
-                      }
-
-                      @Override
-                      public void onAdImpression() {
-                        sendSimpleMessage(MSG_INTERSTITIAL, EVENT_IMPRESSION_RECORDED);
-                      }
-
-                      @Override
-                      public void onAdClicked() {
-                        sendSimpleMessage(MSG_INTERSTITIAL, EVENT_CLICKED);
+                      public void run() {
+                        sendShowError(MSG_INTERSTITIAL, error);
                       }
                     });
-                }
+                  }
 
-                @Override
-                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                  // Handle the error
-                  // Log.d(TAG, loadAdError.getMessage());
-                   mInterstitialAd = null;
-                   sendSimpleMessage(MSG_INTERSTITIAL, EVENT_FAILED_TO_LOAD, "code", loadAdError.getCode(),
-                          "error", String.format("Error domain: \"%s\". %s", loadAdError.getDomain(), loadAdError.getMessage()));
-                }
+                  @Override
+                  public void onAdShowedFullScreenContent() {
+                    activity.runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                        sendSimpleMessage(MSG_INTERSTITIAL, EVENT_OPENING);
+                      }
+                    });
+                  }
+
+                  @Override
+                  public void onAdImpression() {
+                    sendSimpleMessage(MSG_INTERSTITIAL, EVENT_IMPRESSION_RECORDED);
+                  }
+
+                  @Override
+                  public void onAdClicked() {
+                    sendSimpleMessage(MSG_INTERSTITIAL, EVENT_CLICKED);
+                  }
+                });
+              }
             });
           }
-      });
+
+          @Override
+          public void onAdFailedToLoad(@NonNull final LoadAdError loadAdError) {
+            activity.runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                sendLoadError(MSG_INTERSTITIAL, EVENT_FAILED_TO_LOAD, loadAdError);
+              }
+            });
+          }
+        });
+      }
+    });
   }
 
   public void showInterstitial() {
@@ -553,7 +686,9 @@ public class AdmobJNI implements LifecycleObserver {
         @Override
         public void run() {
             if (isInterstitialLoaded()) {
-              mInterstitialAd.show(activity);
+              InterstitialAd interstitialAd = mInterstitialAd;
+              mInterstitialAd = null;
+              interstitialAd.show(activity);
             } else {
               // Log.d(TAG, "The interstitial ad wasn't ready yet.");
               sendSimpleMessage(MSG_INTERSTITIAL, EVENT_NOT_LOADED, "error", "Can't show Interstitial AD that wasn't loaded.");
@@ -569,79 +704,82 @@ public class AdmobJNI implements LifecycleObserver {
 //--------------------------------------------------
 // Rewarded ADS
 
-  private RewardedAd mRewardedAd;
+  private volatile RewardedAd mRewardedAd;
 
-  private void setRewardedCustomData(final String userId, final String customData) {
-    ServerSideVerificationOptions options = new ServerSideVerificationOptions.Builder()
-      .setUserId(userId != null ? userId : "")
-      .setCustomData(customData != null ? customData : "")
-      .build();
-    mRewardedAd.setServerSideVerificationOptions(options);
+  private void setRewardedCustomData(RewardedAd rewardedAd, final String userId, final String customData) {
+    ServerSideVerificationOptions options = new ServerSideVerificationOptions(
+        userId != null ? userId : "",
+        customData != null ? customData : "");
+    rewardedAd.setServerSideVerificationOptions(options);
   }
 
   public void loadRewarded(final String unitId, final String userId,  final String customData) {
-    activity.runOnUiThread(new Runnable() {
+    runWhenInitialized(new Runnable() {
       @Override
       public void run() {
-        AdRequest adRequest = createAdRequest();
+        RewardedAd.load(createAdRequest(unitId), new AdLoadCallback<RewardedAd>() {
+          @Override
+          public void onAdLoaded(@NonNull final RewardedAd rewardedAd) {
+            activity.runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                mRewardedAd = rewardedAd;
+                setRewardedCustomData(rewardedAd, userId, customData);
+                sendSimpleMessage(MSG_REWARDED, EVENT_LOADED);
+                rewardedAd.setAdEventCallback(new RewardedAdEventCallback() {
+                  @Override
+                  public void onAdDismissedFullScreenContent() {
+                    activity.runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                        sendSimpleMessage(MSG_REWARDED, EVENT_CLOSED);
+                      }
+                    });
+                  }
 
-        RewardedAd.load(activity, unitId,
-          adRequest, new RewardedAdLoadCallback(){
-            @Override
-            public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
-              // Log.d(TAG, "onAdLoaded");
-              mRewardedAd = rewardedAd;
-              sendSimpleMessage(MSG_REWARDED, EVENT_LOADED);
-              setRewardedCustomData(userId, customData);
-              mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-                @Override
-                public void onAdDismissedFullScreenContent() {
-                  // Called when ad is dismissed.
-                  // Don't forget to set the ad reference to null so you
-                  // don't show the ad a second time.
-                  // Log.d(TAG, "Ad was dismissed.");
-                  mRewardedAd = null;
-                  sendSimpleMessage(MSG_REWARDED, EVENT_CLOSED);
-                }
+                  @Override
+                  public void onAdFailedToShowFullScreenContent(final FullScreenContentError error) {
+                    activity.runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                        sendShowError(MSG_REWARDED, error);
+                      }
+                    });
+                  }
 
-                @Override
-                public void onAdFailedToShowFullScreenContent(AdError adError) {
-                  // Called when ad fails to show.
-                  // Log.d(TAG, "Ad failed to show.");
-                  mRewardedAd = null;
-                  sendSimpleMessage(MSG_REWARDED, EVENT_FAILED_TO_SHOW, "code", adError.getCode(),
-                          "error", String.format("Error domain: \"%s\". %s", adError.getDomain(), adError.getMessage()));
-                }
+                  @Override
+                  public void onAdShowedFullScreenContent() {
+                    activity.runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                        sendSimpleMessage(MSG_REWARDED, EVENT_OPENING);
+                      }
+                    });
+                  }
 
-                @Override
-                public void onAdShowedFullScreenContent() {
-                  // Called when ad is shown.
-                  // Log.d(TAG, "Ad was shown.");
-                  mRewardedAd = null;
-                  sendSimpleMessage(MSG_REWARDED, EVENT_OPENING);
-                }
+                  @Override
+                  public void onAdImpression() {
+                    sendSimpleMessage(MSG_REWARDED, EVENT_IMPRESSION_RECORDED);
+                  }
 
-                @Override
-                public void onAdImpression() {
-                  sendSimpleMessage(MSG_REWARDED, EVENT_IMPRESSION_RECORDED);
-                }
+                  @Override
+                  public void onAdClicked() {
+                    sendSimpleMessage(MSG_REWARDED, EVENT_CLICKED);
+                  }
+                });
+              }
+            });
+          }
 
-                @Override
-                public void onAdClicked() {
-                  sendSimpleMessage(MSG_REWARDED, EVENT_CLICKED);
-                }
-
-              });
-            }
-
-            @Override
-            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-              // Handle the error.
-              // Log.d(TAG, "onAdFailedToLoad");
-              mRewardedAd = null;
-              sendSimpleMessage(MSG_REWARDED, EVENT_FAILED_TO_LOAD, "code", loadAdError.getCode(),
-                          "error", String.format("Error domain: \"%s\". %s", loadAdError.getDomain(), loadAdError.getMessage()));
-            }
+          @Override
+          public void onAdFailedToLoad(@NonNull final LoadAdError loadAdError) {
+            activity.runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                sendLoadError(MSG_REWARDED, EVENT_FAILED_TO_LOAD, loadAdError);
+              }
+            });
+          }
         });
       }
     });
@@ -652,7 +790,9 @@ public class AdmobJNI implements LifecycleObserver {
         @Override
         public void run() {
           if (isRewardedLoaded()) {
-            mRewardedAd.show(activity, new OnUserEarnedRewardListener() {
+            RewardedAd rewardedAd = mRewardedAd;
+            mRewardedAd = null;
+            rewardedAd.show(activity, new OnUserEarnedRewardListener() {
               @Override
               public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
                 // Handle the reward.
@@ -677,70 +817,76 @@ public class AdmobJNI implements LifecycleObserver {
 //--------------------------------------------------
 // Rewarded Interstitial ADS
 
-  private RewardedInterstitialAd mRewardedInterstitialAd;
+  private volatile RewardedInterstitialAd mRewardedInterstitialAd;
 
   public void loadRewardedInterstitial(final String unitId) {
-    activity.runOnUiThread(new Runnable() {
+    runWhenInitialized(new Runnable() {
       @Override
       public void run() {
-        AdRequest adRequest = createAdRequest();
+        RewardedInterstitialAd.load(
+            createAdRequest(unitId),
+            new AdLoadCallback<RewardedInterstitialAd>() {
+          @Override
+          public void onAdLoaded(@NonNull final RewardedInterstitialAd rewardedAd) {
+            activity.runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                mRewardedInterstitialAd = rewardedAd;
+                sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_LOADED);
+                rewardedAd.setAdEventCallback(new RewardedInterstitialAdEventCallback() {
+                  @Override
+                  public void onAdDismissedFullScreenContent() {
+                    activity.runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                        sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_CLOSED);
+                      }
+                    });
+                  }
 
-        RewardedInterstitialAd.load(activity, unitId,
-          adRequest, new RewardedInterstitialAdLoadCallback(){
-            @Override
-            public void onAdLoaded(@NonNull RewardedInterstitialAd rewardedAd) {
-              // Log.d(TAG, "onAdLoaded");
-              mRewardedInterstitialAd = rewardedAd;
-              sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_LOADED);
-              mRewardedInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-                @Override
-                public void onAdDismissedFullScreenContent() {
-                  // Called when ad is dismissed.
-                  // Don't forget to set the ad reference to null so you
-                  // don't show the ad a second time.
-                  // Log.d(TAG, "Ad was dismissed.");
-                  mRewardedInterstitialAd = null;
-                  sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_CLOSED);
-                }
+                  @Override
+                  public void onAdFailedToShowFullScreenContent(final FullScreenContentError error) {
+                    activity.runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                        sendShowError(MSG_REWARDED_INTERSTITIAL, error);
+                      }
+                    });
+                  }
 
-                @Override
-                public void onAdFailedToShowFullScreenContent(AdError adError) {
-                  // Called when ad fails to show.
-                  // Log.d(TAG, "Ad failed to show.");
-                  mRewardedInterstitialAd = null;
-                  sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_FAILED_TO_SHOW, "code", adError.getCode(),
-                          "error", String.format("Error domain: \"%s\". %s", adError.getDomain(), adError.getMessage()));
-                }
+                  @Override
+                  public void onAdShowedFullScreenContent() {
+                    activity.runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                        sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_OPENING);
+                      }
+                    });
+                  }
 
-                @Override
-                public void onAdShowedFullScreenContent() {
-                  // Called when ad is shown.
-                  // Log.d(TAG, "Ad was shown.");
-                  mRewardedInterstitialAd = null;
-                  sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_OPENING);
-                }
+                  @Override
+                  public void onAdImpression() {
+                    sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_IMPRESSION_RECORDED);
+                  }
 
-                @Override
-                public void onAdImpression() {
-                  sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_IMPRESSION_RECORDED);
-                }
+                  @Override
+                  public void onAdClicked() {
+                    sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_CLICKED);
+                  }
+                });
+              }
+            });
+          }
 
-                @Override
-                public void onAdClicked() {
-                  sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_CLICKED);
-                }
-
-              });
-            }
-
-            @Override
-            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-              // Handle the error.
-              // Log.d(TAG, "onAdFailedToLoad");
-              mRewardedInterstitialAd = null;
-              sendSimpleMessage(MSG_REWARDED_INTERSTITIAL, EVENT_FAILED_TO_LOAD, "code", loadAdError.getCode(),
-                          "error", String.format("Error domain: \"%s\". %s", loadAdError.getDomain(), loadAdError.getMessage()));
-            }
+          @Override
+          public void onAdFailedToLoad(@NonNull final LoadAdError loadAdError) {
+            activity.runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                sendLoadError(MSG_REWARDED_INTERSTITIAL, EVENT_FAILED_TO_LOAD, loadAdError);
+              }
+            });
+          }
         });
       }
     });
@@ -751,7 +897,9 @@ public class AdmobJNI implements LifecycleObserver {
         @Override
         public void run() {
           if (isRewardedInterstitialLoaded()) {
-            mRewardedInterstitialAd.show(activity, new OnUserEarnedRewardListener() {
+            RewardedInterstitialAd rewardedInterstitialAd = mRewardedInterstitialAd;
+            mRewardedInterstitialAd = null;
+            rewardedInterstitialAd.show(activity, new OnUserEarnedRewardListener() {
               @Override
               public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
                 // Handle the reward.
@@ -777,80 +925,96 @@ public class AdmobJNI implements LifecycleObserver {
 // Banner ADS
 
   private LinearLayout layout;
-  private AdView bannerAdView;
+  private volatile AdView bannerAdView;
   private WindowManager windowManager;
+  private boolean isBannerLoading = false;
   private boolean isBannerShown = false;
   private int bannerPosition = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
   private int bannerSizeConst = SIZE_ADAPTIVE_BANNER;
 
-  public void loadBanner(final String unitId, int bannerSize) {
-    if (isBannerLoaded())
-    {
-      return;
-    }
-    bannerSizeConst = bannerSize;
-    final AdView view = new AdView(activity);
-    view.setAdUnitId(unitId);
-    AdSize adSize = getSizeConstant(bannerSize);
-    view.setAdSize(adSize);
-    final int bannerWidth  = adSize.getWidthInPixels(activity);
-    final int bannerHeight = adSize.getHeightInPixels(activity);
-    view.pause();
-    // Log.d(TAG, "loadBanner");
-    activity.runOnUiThread(new Runnable() {
+  public void loadBanner(final String unitId, final int bannerSize) {
+    runWhenInitialized(new Runnable() {
       @Override
       public void run() {
-          AdRequest adRequest = createAdRequest();
-          view.setAdListener(new AdListener() {
-            @Override
-            public void onAdLoaded() {
-              // Code to be executed when an ad finishes loading and when banner refreshed.
-              // Log.d(TAG, "onAdLoaded");
-              if (!isBannerLoaded()) {
+        if (isBannerLoaded() || isBannerLoading) {
+          return;
+        }
+
+        isBannerLoading = true;
+        bannerSizeConst = bannerSize;
+        final AdView view = new AdView(activity);
+        final AdSize adSize = getSizeConstant(bannerSize);
+        final int bannerWidth = adSize.getWidthInPixels(activity);
+        final int bannerHeight = adSize.getHeightInPixels(activity);
+        BannerAdRequest request = new BannerAdRequest.Builder(unitId, adSize)
+            .setRequestAgent(defoldUserAgent)
+            .build();
+
+        view.loadAd(request, new AdLoadCallback<BannerAd>() {
+          @Override
+          public void onAdLoaded(@NonNull final BannerAd bannerAd) {
+            bannerAd.setAdEventCallback(new BannerAdEventCallback() {
+              @Override
+              public void onAdShowedFullScreenContent() {
+                sendSimpleMessage(MSG_BANNER, EVENT_OPENING);
+              }
+
+              @Override
+              public void onAdDismissedFullScreenContent() {
+                sendSimpleMessage(MSG_BANNER, EVENT_CLOSED);
+              }
+
+              @Override
+              public void onAdFailedToShowFullScreenContent(FullScreenContentError error) {
+                sendShowError(MSG_BANNER, error);
+              }
+
+              @Override
+              public void onAdClicked() {
+                sendSimpleMessage(MSG_BANNER, EVENT_CLICKED);
+              }
+
+              @Override
+              public void onAdImpression() {
+                sendSimpleMessage(MSG_BANNER, EVENT_IMPRESSION_RECORDED);
+              }
+            });
+            bannerAd.setBannerAdRefreshCallback(new BannerAdRefreshCallback() {
+              @Override
+              public void onAdRefreshed() {
+                sendSimpleMessage(MSG_BANNER, EVENT_LOADED, "height", bannerHeight, "width", bannerWidth);
+              }
+
+              @Override
+              public void onAdFailedToRefresh(LoadAdError error) {
+                sendLoadError(MSG_BANNER, EVENT_FAILED_TO_LOAD, error);
+              }
+            });
+
+            activity.runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                isBannerLoading = false;
                 bannerAdView = view;
                 createLayout();
+                sendSimpleMessage(MSG_BANNER, EVENT_LOADED, "height", bannerHeight, "width", bannerWidth);
               }
-              sendSimpleMessage(MSG_BANNER, EVENT_LOADED, "height", bannerHeight, "width", bannerWidth);
-            }
+            });
+          }
 
-            @Override
-            public void onAdFailedToLoad(LoadAdError loadAdError) {
-              // Code to be executed when an ad request fails.
-              // Log.d(TAG, "onAdFailedToLoad");
-              sendSimpleMessage(MSG_BANNER, EVENT_FAILED_TO_LOAD, "code", loadAdError.getCode(),
-                          "error", String.format("Error domain: \"%s\". %s", loadAdError.getDomain(), loadAdError.getMessage()));
-            }
-
-            @Override
-            public void onAdOpened() {
-              // Code to be executed when an ad opens an overlay that
-              // covers the screen.
-              // Log.d(TAG, "onAdOpened");
-              sendSimpleMessage(MSG_BANNER, EVENT_OPENING);
-            }
-
-            @Override
-            public void onAdClicked() {
-              // Code to be executed when the user clicks on an ad.
-              // Log.d(TAG, "onAdClicked");
-              sendSimpleMessage(MSG_BANNER, EVENT_CLICKED);
-            }
-
-            @Override
-            public void onAdClosed() {
-              // Code to be executed when the user is about to return
-              // to the app after tapping on an ad.
-              // Log.d(TAG, "onAdClosed");
-              sendSimpleMessage(MSG_BANNER, EVENT_CLOSED);
-            }
-
-            @Override
-            public void onAdImpression() {
-              sendSimpleMessage(MSG_BANNER, EVENT_IMPRESSION_RECORDED);
-            }
-          });
-          view.loadAd(adRequest);
-        }
+          @Override
+          public void onAdFailedToLoad(@NonNull final LoadAdError loadAdError) {
+            activity.runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                isBannerLoading = false;
+                view.destroy();
+                sendLoadError(MSG_BANNER, EVENT_FAILED_TO_LOAD, loadAdError);
+              }
+            });
+          }
+        });
+      }
     });
   }
 
@@ -893,7 +1057,6 @@ public class AdmobJNI implements LifecycleObserver {
           if (!layout.isShown())
           {
             windowManager.addView(layout, getParameters());
-            bannerAdView.resume();
             isBannerShown = true;
           }
         }
@@ -909,7 +1072,6 @@ public class AdmobJNI implements LifecycleObserver {
           }
           isBannerShown = false;
           windowManager.removeView(layout);
-          bannerAdView.pause();
         }
     });
   }
@@ -1005,9 +1167,6 @@ public class AdmobJNI implements LifecycleObserver {
         break;
       case SIZE_MEDIUM_RECTANGLE:
         bannerSize = AdSize.MEDIUM_RECTANGLE;
-        break;
-      case SIZE_SMART_BANNER:
-        bannerSize = AdSize.SMART_BANNER;
         break;
       }
     return bannerSize;

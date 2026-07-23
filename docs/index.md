@@ -20,6 +20,12 @@ Select `Project->Fetch Libraries` once you have added the version to `game.proje
 
 Before you begin you need to either [sign in](https://admob.google.com/home/) to or [sign up for](https://support.google.com/admob/answer/7356219) an AdMob account. Next you need to [register your app with AdMob](https://support.google.com/admob/answer/2773509) to get an AdMob App Id. You need this id when you configure your Defold game.
 
+### Android requirements
+
+Android builds use the [GMA Next-Gen SDK](https://developers.google.com/admob/android/next-gen/quick-start), which requires Android minimum SDK version 24 and compile SDK version 34 or later. [The GMA Next-Gen SDK does not support Android TV](https://developers.google.com/admob/android/next-gen/sdk).
+
+The removed Android `SMART_BANNER` format is no longer exposed by the extension. Use `admob.SIZE_ADAPTIVE_BANNER` instead.
+
 
 ## Configuration
 The extension can be configured by adding the following fields to `game.project` ( just open this file in any text editor and paste these lines):
@@ -60,8 +66,9 @@ Apple documentation: https://developer.apple.com/documentation/apptrackingtransp
 
 For now mediation is supported on Android only. To enable it:
 
+- Use AdMob as the mediation platform. Other mediation platforms are not compatible with the GMA Next-Gen SDK.
 - Enable the adapters you need in the `[admob]` section of `game.project` (for example `unity_android = 1`).
-- Follow [each network’s official mediation guide](https://developers.google.com/admob/android/mediation/applovin) end-to-end. There is no partial “adapter added but not initialized” state.
+- Follow [each network’s official GMA Next-Gen mediation guide](https://developers.google.com/admob/android/next-gen/mediation/choose-networks) end-to-end. There is no partial “adapter added but not initialized” state.
 - You must use your own ad unit IDs. Google’s demo IDs only show Google ads and won’t exercise mediation.
 - If something is missing in the dashboard configuration, there may be no logs or Ad Inspector hints; when it is correct it simply reports as working.
 - For testing the AdMob network, set `admob.test_ads_in_debug = 1` to mark the device as a test device in debug builds.
@@ -80,7 +87,7 @@ if admob then
     
     -- Read documentation about privacy settings and use the following method if you need to apply it
     -- https://developers.google.com/admob/ios/ccpa
-    -- https://developers.google.com/admob/android/ccpa
+    -- https://developers.google.com/admob/android/next-gen/privacy/us-states
     admob.set_privacy_settings(true)
 end
 ```
@@ -125,6 +132,8 @@ end
 
 ### Initialization
 Next step is to initialize the Mobile Ads SDK. Note that if you need to obtain consent from users in the European Economic Area (EEA), set any request-specific flags, or otherwise take action before loading ads, ensure you do so before initializing the Mobile Ads SDK.
+
+On Android, initialization starts automatically when `admob.app_open_android` is configured. Leave that setting empty and use the manual App Open flow after initialization if consent or other configuration must be applied first.
 
 ```lua
 admob.initialize()

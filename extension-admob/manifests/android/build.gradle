@@ -25,12 +25,16 @@ repositories {
   {{/admob.pubmatic_android}}
 }
 
+configurations.configureEach {
+  exclude group: "com.google.android.gms", module: "play-services-ads"
+  exclude group: "com.google.android.gms", module: "play-services-ads-lite"
+}
+
 dependencies {
-  implementation "com.google.android.gms:play-services-ads:25.4.0"
+  implementation "com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk:1.2.1"
   implementation "androidx.lifecycle:lifecycle-common:2.8.3"
   implementation "androidx.lifecycle:lifecycle-process:2.8.3"
   annotationProcessor "androidx.lifecycle:lifecycle-compiler:2.8.3"
-
   {{#admob.applovin_android}}
   implementation 'com.google.ads.mediation:applovin:13.6.3.0'
   {{/admob.applovin_android}}

@@ -3,16 +3,10 @@
     <uses-sdk android:minSdkVersion="{{android.minimum_sdk_version}}" android:targetSdkVersion="{{android.target_sdk_version}}" />
     <application>
 
-        <!-- For extension-admob -->
+        <!-- Required by the Google User Messaging Platform SDK -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="{{admob.app_id_android}}"/>
-        <meta-data
-            android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
-            android:value="true"/>
-        <meta-data
-            android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
-            android:value="true"/>
 
     </application>
     

@@ -160,14 +160,14 @@ function init(self)
         if sys.get_sys_info().system_name == 'iPhone OS' then
             -- https://developers.google.com/admob/ios/test-ads
             self.appopen_ad_unit = sys.get_config_string("admob.app_open_ios", "ca-app-pub-3940256099942544/5575463023")
-            self.banner_ad_unit = "ca-app-pub-3940256099942544/2934735716" -- test unit for banners
+            self.banner_ad_unit = "ca-app-pub-3940256099942544/2435281174" -- test unit for adaptive banners
             self.interstitial_ad_unit = "ca-app-pub-3940256099942544/4411468910" -- test unit for interstitial
             self.rewardedvideo_ad_unit = "ca-app-pub-3940256099942544/1712485313" -- test unit for rewarded
             self.rewarded_interstitial_video_ad_unit = "ca-app-pub-3940256099942544/6978759866" -- test unit for rewarded interstitial
         else --Android
             -- From https://developers.google.com/admob/android/next-gen/test-ads
             self.appopen_ad_unit = sys.get_config_string("admob.app_open_android", "ca-app-pub-3940256099942544/9257395921")
-            self.banner_ad_unit = "ca-app-pub-3940256099942544/6300978111" -- test unit for banners
+            self.banner_ad_unit = "ca-app-pub-3940256099942544/9214589741" -- test unit for adaptive banners
             self.interstitial_ad_unit = "ca-app-pub-3940256099942544/1033173712" -- test unit for interstitial
             self.rewardedvideo_ad_unit = "ca-app-pub-3940256099942544/5224354917" -- test unit for rewarded
             self.rewarded_interstitial_video_ad_unit = "ca-app-pub-3940256099942544/5354046379" -- test unit for rewarded interstitial
@@ -178,14 +178,16 @@ function init(self)
         -- https://developers.google.com/admob/android/next-gen/quick-start#set_up_your_app_in_your_admob_account
         if sys.get_sys_info().system_name == 'iPhone OS' then
             self.appopen_ad_unit = sys.get_config_string("admob.app_open_ios", "ca-app-pub-3940256099942544/5575463023")
-            self.banner_ad_unit = "ca-app-pub-3940256099942544/2934735716" -- !!! replace it with iOS banner unit
+            self.banner_ad_unit = "ca-app-pub-3940256099942544/2435281174" -- !!! replace it with iOS banner unit
             self.interstitial_ad_unit = "ca-app-pub-3940256099942544/4411468910" -- !!! replace it with iOS interstitial unit
             self.rewardedvideo_ad_unit = "ca-app-pub-3940256099942544/1712485313" --  !!! replace it with iOS rewarded unit
+            self.rewarded_interstitial_video_ad_unit = "ca-app-pub-3940256099942544/6978759866" -- !!! replace it with iOS rewarded interstitial unit
         else --Android
             self.appopen_ad_unit = sys.get_config_string("admob.app_open_android", "ca-app-pub-3940256099942544/9257395921")
-            self.banner_ad_unit = "ca-app-pub-3940256099942544/6300978111" --  !!! replace it with Android banner unit
+            self.banner_ad_unit = "ca-app-pub-3940256099942544/9214589741" --  !!! replace it with Android banner unit
             self.interstitial_ad_unit = "ca-app-pub-3940256099942544/1033173712" -- !!! replace it with Android interstitial unit
             self.rewardedvideo_ad_unit = "ca-app-pub-3940256099942544/5224354917" -- !!! replace it with Android rewarded unit
+            self.rewarded_interstitial_video_ad_unit = "ca-app-pub-3940256099942544/5354046379" -- !!! replace it with Android rewarded interstitial unit
         end
     end
 

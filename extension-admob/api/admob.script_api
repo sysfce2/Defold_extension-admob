@@ -302,8 +302,8 @@
     parameters:
     - name: ad_unit_id
       type: string
-      desc: Ad unit ID, for test ads use on Android `"ca-app-pub-3940256099942544/1712485313"`, or
-            on iOS `"ca-app-pub-3940256099942544/4411468910"`
+      desc: Ad unit ID, for test ads use on Android `"ca-app-pub-3940256099942544/5224354917"`, or
+            on iOS `"ca-app-pub-3940256099942544/1712485313"`
             Original docs
             [Android](https://developers.google.com/admob/android/next-gen/rewarded),
             [iOS](https://developers.google.com/admob/ios/rewarded-ads)
@@ -414,8 +414,8 @@
     parameters:
     - name: ad_unit_id
       type: string
-      desc: Ad unit ID, for test ads use on Android `"ca-app-pub-3940256099942544/6300978111"`, or
-            on iOS `"ca-app-pub-3940256099942544/2934735716"`
+      desc: Ad unit ID, for adaptive banner test ads use on Android `"ca-app-pub-3940256099942544/9214589741"`, or
+            on iOS `"ca-app-pub-3940256099942544/2435281174"`
             Original docs
             [Android](https://developers.google.com/admob/android/next-gen/banner),
             [iOS](https://developers.google.com/admob/ios/banner)
